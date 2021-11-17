@@ -16,6 +16,7 @@ Quick Start
 ----
 ```
 yarn
+ts-node src/drifting-mango.ts
 ```
 
 # Disclaimer
