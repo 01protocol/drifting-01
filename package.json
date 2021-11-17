@@ -1,5 +1,7 @@
 {
   "dependencies": {
-    "@drift-labs/sdk": "^0.1.7"
+    "@blockworks-foundation/mango-client": "^3.2.5",
+    "@drift-labs/sdk": "^0.1.7",
+    "ts-node": "^10.4.0"
   }
 }

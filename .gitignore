@@ -141,3 +141,4 @@ src/**.js.map
 
 .env
 
+key.json
