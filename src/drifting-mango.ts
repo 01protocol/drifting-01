@@ -115,11 +115,11 @@ const main = async () => {
         priceInfo.shortEntry = formattedPrice * (1 - shortSlippage )
     })
 
-    async function canOpenDriftShort() {
+    async function getCanOpenDriftShort() {
         return (convertToNumber(user.getPositionValue(solMarketInfo.marketIndex), QUOTE_PRECISION) > -1 * MAX_POSITION_SIZE)
     }
 
-    async function canOpenDriftLong() {
+    async function getCanOpenDriftLong() {
         return (convertToNumber(user.getPositionValue(solMarketInfo.marketIndex), QUOTE_PRECISION) < MAX_POSITION_SIZE)
     }
 
@@ -136,10 +136,15 @@ const main = async () => {
         const driftLongDiff = (mangoBid - priceInfo.longEntry) / priceInfo.longEntry * 100
         console.log(`Buy Drift Sell Mango Diff: ${driftShortDiff.toFixed(4)}%. // Buy Mango Sell Drift Diff: ${driftLongDiff.toFixed(4)}%.`)
 
+        let canOpenDriftLong = await getCanOpenDriftLong()
+        let canOpenDriftShort = await getCanOpenDriftShort()
 
         // open drift long mango short
-        if (driftLongDiff > THRESHOLD) {
-            if (!await canOpenDriftLong()) {
+
+        // if short is maxed out, try to lower threshold to close the short open more long.
+        let driftLongThreshold = canOpenDriftShort ? THRESHOLD : (-0.5 * THRESHOLD)
+        if (driftLongDiff > driftLongThreshold) {
+            if (!canOpenDriftLong) {
                 console.log(`Letting this opportunity go due to Drift long exposure is > ${MAX_POSITION_SIZE}`)
                 return
             }
@@ -161,8 +166,10 @@ const main = async () => {
         }
 
         // open mango short drift long
-        if (driftShortDiff > THRESHOLD) {
-            if (!await canOpenDriftShort()) {
+        // if long is maxed out, try to lower threshold to close the long by more short.
+        let driftShortThreshold = canOpenDriftLong ? THRESHOLD : (-0.5 * THRESHOLD)
+        if (driftShortThreshold > driftShortThreshold) {
+            if (!canOpenDriftShort) {
                 console.log(`Letting this opportunity go due to Drift short exposure is < ${MAX_POSITION_SIZE}`)
                 return
             }
