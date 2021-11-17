@@ -13,7 +13,7 @@ For example if Mango is selling at 260 and Drift is selling at 230, it will open
 # Pre-requisite
 
 1. You will need Drift Alpha access
-2. Import your Drift Alpha access's key into Phantom. You can paste the whole array in as private key.
+2. Import your Drift Alpha access's wallet private key into Phantom. You can paste the whole array in as private key.
 3. Deposit USDC into Drift via UI
 4. Create new Mango Account in the same wallet via UI
 5. Deposit same amount of money into Mango
