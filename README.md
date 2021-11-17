@@ -4,8 +4,11 @@
 
 # What is it
 
-It looks at Mango SOL-PERP price and Drift SOL-PERP price. Once it becomes wide enough, it opens a postion on both side to close it.
-If Mango is selling at 260 and Drift is selling at 230, it will open Mango short and Drift long.
+The program looks at Mango SOL-PERP price and Drift SOL-PERP price. 
+
+Once the gap becomes wide enough, it opens a postion on both side to close the gap.
+
+For example if Mango is selling at 260 and Drift is selling at 230, it will open Mango market short and Drift market long (in one transaction!).
 
 # Pre-requisite
 
