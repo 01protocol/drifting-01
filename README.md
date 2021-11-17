@@ -29,6 +29,6 @@ ts-node src/drifting-mango.ts
 
 # Disclaimer
 
-NFA, everything is written as an experiment, please don't put more than couple hundred bucks into it.
+NFA, everything is written as an experiment, please don't put more than couple bucks into it.
 
 It also has no liquidation preventive measure, you will get liquidated.
