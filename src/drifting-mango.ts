@@ -141,6 +141,7 @@ const main = async () => {
         if (driftLongDiff > THRESHOLD) {
             if (!await canOpenDriftLong()) {
                 console.log(`Letting this opportunity go due to Drift long exposure is > ${MAX_POSITION_SIZE}`)
+                return
             }
             console.log("====================================================================")
             console.log(`SELL $100 worth of SOL on Mango at price ~${mangoBid}`);
@@ -163,6 +164,7 @@ const main = async () => {
         if (driftShortDiff > THRESHOLD) {
             if (!await canOpenDriftShort()) {
                 console.log(`Letting this opportunity go due to Drift short exposure is < ${MAX_POSITION_SIZE}`)
+                return
             }
 
             console.log("====================================================================")
