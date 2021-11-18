@@ -159,7 +159,7 @@ const main = async () => {
             console.log(`LONG ${POSITION_SIZE_USD} worth of SOL on Drift at price ~${priceInfo.longEntry}`);
             console.log(`Capturing ~${driftLongDiff.toFixed(4)}% profit (Mango fees & slippage not included)`);
 
-            const quantity = priceInfo.longEntry / POSITION_SIZE_USD
+            const quantity = POSITION_SIZE_USD / priceInfo.longEntry
 
             const txn = wrapInTx(await clearingHouse.getOpenPositionIx(
                 PositionDirection.LONG,
@@ -187,7 +187,7 @@ const main = async () => {
             console.log(`LONG ${POSITION_SIZE_USD} worth of SOL on Mango at price ~${mangoAsk}`);
             console.log(`Capturing ~${driftShortDiff.toFixed(4)}% profit (Mango fees & slippage not included)`);
 
-            const quantity = priceInfo.shortEntry / POSITION_SIZE_USD
+            const quantity = POSITION_SIZE_USD / priceInfo.shortEntry
 
             const txn = wrapInTx(await clearingHouse.getOpenPositionIx(
                 PositionDirection.SHORT,
