@@ -116,10 +116,16 @@ const main = async () => {
     })
 
     async function getCanOpenDriftShort() {
-        return (convertToNumber(user.getPositionValue(solMarketInfo.marketIndex), QUOTE_PRECISION) > -1 * MAX_POSITION_SIZE)
+        if (user.getPositionSide(user.getUserPosition(solMarketInfo.marketIndex)) == PositionDirection.LONG) {
+            return true
+        }
+        return (convertToNumber(user.getPositionValue(solMarketInfo.marketIndex), QUOTE_PRECISION) < MAX_POSITION_SIZE)
     }
 
     async function getCanOpenDriftLong() {
+        if (user.getPositionSide(user.getUserPosition(solMarketInfo.marketIndex)) == PositionDirection.SHORT) {
+            return true
+        }
         return (convertToNumber(user.getPositionValue(solMarketInfo.marketIndex), QUOTE_PRECISION) < MAX_POSITION_SIZE)
     }
 
@@ -176,7 +182,7 @@ const main = async () => {
 
             console.log("====================================================================")
             console.log(`SELL $100 worth of SOL on Drift at price ~${priceInfo.shortEntry}`);
-            console.log(`LONG $100 worth of SOL on Drift at price ~${mangoAsk}`);
+            console.log(`LONG $100 worth of SOL on Mango at price ~${mangoAsk}`);
             console.log(`Capturing ~${driftShortDiff.toFixed(4)}% profit (Mango fees & slippage not included)`);
 
             const txn = wrapInTx(await clearingHouse.getOpenPositionIx(
