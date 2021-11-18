@@ -134,7 +134,7 @@ const main = async () => {
 
         const driftShortDiff = (priceInfo.shortEntry - mangoAsk) / mangoAsk * 100
         const driftLongDiff = (mangoBid - priceInfo.longEntry) / priceInfo.longEntry * 100
-        console.log(`Buy Drift Sell Mango Diff: ${driftShortDiff.toFixed(4)}%. // Buy Mango Sell Drift Diff: ${driftLongDiff.toFixed(4)}%.`)
+        console.log(`Buy Drift Sell Mango Diff: ${driftLongDiff.toFixed(4)}%. // Buy Mango Sell Drift Diff: ${driftShortDiff.toFixed(4)}%.`)
 
         let canOpenDriftLong = await getCanOpenDriftLong()
         let canOpenDriftShort = await getCanOpenDriftShort()
@@ -168,7 +168,7 @@ const main = async () => {
         // open mango short drift long
         // if long is maxed out, try to lower threshold to close the long by more short.
         let driftShortThreshold = canOpenDriftLong ? THRESHOLD : (-0.5 * THRESHOLD)
-        if (driftShortThreshold > driftShortThreshold) {
+        if (driftShortDiff> driftShortThreshold) {
             if (!canOpenDriftShort) {
                 console.log(`Letting this opportunity go due to Drift short exposure is < ${MAX_POSITION_SIZE}`)
                 return
