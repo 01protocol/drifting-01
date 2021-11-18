@@ -67,10 +67,10 @@ export default class MangoArbClient {
         return asks.getL2(1)[0][0]
     }
 
-    marketLong(usdAmount, topAsk) {
+    marketLong(usdAmount, topAsk, quantity) {
         const [nativePrice, nativeQuantity] = this.perpMarket.uiToNativePriceQuantity(
             topAsk,
-            usdAmount / topAsk,
+            quantity,
         );
 
         return makePlacePerpOrderInstruction(
@@ -92,10 +92,10 @@ export default class MangoArbClient {
         )
     }
 
-    marketShort(usdAmount, topBid){
+    marketShort(usdAmount, topBid, quantity){
         const [nativePrice, nativeQuantity] = this.perpMarket.uiToNativePriceQuantity(
             topBid,
-            usdAmount / topBid,
+            quantity,
         );
 
         return makePlacePerpOrderInstruction(

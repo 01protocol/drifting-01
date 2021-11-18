@@ -159,13 +159,15 @@ const main = async () => {
             console.log(`LONG ${POSITION_SIZE_USD} worth of SOL on Drift at price ~${priceInfo.longEntry}`);
             console.log(`Capturing ~${driftLongDiff.toFixed(4)}% profit (Mango fees & slippage not included)`);
 
+            const quantity = priceInfo.longEntry / POSITION_SIZE_USD
+
             const txn = wrapInTx(await clearingHouse.getOpenPositionIx(
                 PositionDirection.LONG,
                 new BN(POSITION_SIZE_USD).mul(QUOTE_PRECISION),
                 solMarketInfo.marketIndex
             ));
 
-            txn.add(mangoArbClient.marketShort(POSITION_SIZE_USD, mangoBid))
+            txn.add(mangoArbClient.marketShort(POSITION_SIZE_USD, mangoBid, quantity))
             await clearingHouse.txSender.send(txn, [], clearingHouse.opts).catch(t => {
                 console.log("Transaction didn't go through, may due to low balance...", t)
             });
@@ -185,12 +187,14 @@ const main = async () => {
             console.log(`LONG ${POSITION_SIZE_USD} worth of SOL on Mango at price ~${mangoAsk}`);
             console.log(`Capturing ~${driftShortDiff.toFixed(4)}% profit (Mango fees & slippage not included)`);
 
+            const quantity = priceInfo.shortEntry / POSITION_SIZE_USD
+
             const txn = wrapInTx(await clearingHouse.getOpenPositionIx(
                 PositionDirection.SHORT,
                 new BN(POSITION_SIZE_USD).mul(QUOTE_PRECISION),
                 solMarketInfo.marketIndex
             ));
-            txn.add(mangoArbClient.marketLong(POSITION_SIZE_USD, mangoAsk))
+            txn.add(mangoArbClient.marketLong(POSITION_SIZE_USD, mangoAsk, quantity))
             await clearingHouse.txSender.send(txn, [], clearingHouse.opts).catch(t => {
                 console.log("Transaction didn't go through, may due to low balance...", t)
             });
