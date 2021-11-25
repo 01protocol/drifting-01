@@ -9,7 +9,6 @@ const main = async () => {
 
     const mangoArbClient = new MangoArbClient('')
     await mangoArbClient.init(JSON.parse(''))
-
     const minChange = {
         'SOL': 0.5
     }
@@ -68,13 +67,20 @@ const main = async () => {
             if (orders.length === 0) {
                 const currentTime = new Date().getTime() / 1000
                 console.log("pre", localOrders)
+
                 localOrders = localOrders.filter(p => {
+                    console.log(p['market'], marketName)
+                    console.log(p['side'], side)
+                    console.log(p['size'], Math.abs(delta))
+                    console.log(p['epoch'] + 5 , currentTime)
                     return p['market'] === marketName
                         && p['side'] === side
                         && p['size'] === Math.abs(delta)
                         && p['epoch'] + 5 > currentTime
                 })
+
                 console.log("post", localOrders)
+
                 if (localOrders.length) {
                     console.log("already have order in local")
                 } else {
