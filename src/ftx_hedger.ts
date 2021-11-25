@@ -69,13 +69,8 @@ const main = async () => {
                 console.log("pre", localOrders)
 
                 localOrders = localOrders.filter(p => {
-                    console.log(p['market'], marketName)
-                    console.log(p['side'], side)
-                    console.log(p['size'], Math.abs(delta))
-                    console.log(p['epoch'] + 5 , currentTime)
                     return p['market'] === marketName
                         && p['side'] === side
-                        && p['size'] === Math.abs(delta)
                         && p['epoch'] + 5 > currentTime
                 })
 
