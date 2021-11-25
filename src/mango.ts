@@ -11,6 +11,7 @@ import {
 import {BN} from '@drift-labs/sdk';
 import {Account, Connection} from "@solana/web3.js";
 import configFile from './ids.json';
+import {RestClient} from 'ftx-api'
 
 export default class MangoArbClient {
     perpMarket: PerpMarket;
@@ -21,6 +22,7 @@ export default class MangoArbClient {
     mangoGroup: MangoGroup;
     owner: Account;
     marketIndex: number
+    ftx: RestClient;
 
     constructor(url: string) {
         const config = new Config(configFile);
@@ -29,7 +31,11 @@ export default class MangoArbClient {
             'mainnet.1',
         ) as GroupConfig;
 
-        this.connection = new Connection(url);
+        this.connection = new Connection(url, {commitment: 'processed'});
+
+        this.ftx = new RestClient(process.env['FTX_API_KEY'], process.env['FTX_API_SECRET'], {
+            subAccountName: 'mango-hedge',
+        })
 
     }
 
@@ -56,6 +62,26 @@ export default class MangoArbClient {
         )[0];
     }
 
+    async refresh() {
+        const perpMarketConfig = getMarketByBaseSymbolAndKind(
+            this.groupConfig,
+            'SOL',
+            'perp',
+        );
+
+        this.marketIndex = perpMarketConfig.marketIndex;
+        this.mangoGroup = await this.client.getMangoGroup(this.groupConfig.publicKey);
+        this.perpMarket = await this.mangoGroup.loadPerpMarket(
+            this.connection,
+            perpMarketConfig.marketIndex,
+            perpMarketConfig.baseDecimals,
+            perpMarketConfig.quoteDecimals,
+        );
+        this.mangoAccount = (
+            await this.client.getMangoAccountsForOwner(this.mangoGroup, this.owner.publicKey)
+        )[0];
+    }
+
 
     async getTopBid() {
         let bids = await this.perpMarket.loadBids(this.connection);
@@ -65,6 +91,11 @@ export default class MangoArbClient {
     async getTopAsk() {
         let asks = await this.perpMarket.loadAsks(this.connection);
         return asks.getL2(1)[0][0]
+    }
+
+    async getPositions() {
+        await this.refresh()
+        return this.mangoAccount.getPerpPositionUi(this.marketIndex, this.perpMarket)
     }
 
     marketLong(usdAmount, topAsk, quantity) {
@@ -92,7 +123,7 @@ export default class MangoArbClient {
         )
     }
 
-    marketShort(usdAmount, topBid, quantity){
+    marketShort(usdAmount, topBid, quantity) {
         const [nativePrice, nativeQuantity] = this.perpMarket.uiToNativePriceQuantity(
             topBid,
             quantity,
