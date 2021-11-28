@@ -113,7 +113,7 @@ const main = async () => {
     }, 1000);
 
 
-    // await loop()
+    await loop()
 }
 
 main()
