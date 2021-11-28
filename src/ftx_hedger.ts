@@ -1,5 +1,8 @@
 import MangoArbClient from "./mango";
 
+import StatsD from 'hot-shots'
+const dogstatsd = new StatsD();
+
 let localOrders = []
 const main = async () => {
 
@@ -7,9 +10,9 @@ const main = async () => {
     const mangoArbClient = new MangoArbClient('')
     await mangoArbClient.init(JSON.parse(''))
     const minChange = {
-        'SOL': 0.5,
-        'ETH': 0.03,
-        'BTC': 0.002
+        'SOL': 5,
+        'ETH': 0.3,
+        'BTC': 0.02
     }
 
     const findPrice = (orderbook, size) => {
@@ -38,6 +41,9 @@ const main = async () => {
 
 
                 const delta = mangoBalance[market] + ftxCoinBalance
+
+                dogstatsd.gauge(`mmm.mango.coinBalance.${market}`, mangoBalance[market])
+                dogstatsd.gauge(`mmm.ftx.coinBalance.${market}`, ftxCoinBalance)
 
                 if (Math.abs(delta) > minChange[market]) {
                     const orderbook = (await mangoArbClient.ftx.getOrderbook({marketName: marketName}))['result']
@@ -99,7 +105,15 @@ const main = async () => {
         }
     }
 
-    await loop()
+    setInterval(async function(){
+        const mangoValue = await mangoArbClient.getAccountValue()
+        const ftxAccount = (await mangoArbClient.ftx.getAccount())['result']['totalAccountValue']
+        dogstatsd.gauge('mmm.mango.accountValue', mangoValue)
+        dogstatsd.gauge('mmm.ftx.accountValue', ftxAccount)
+    }, 1000);
+
+
+    // await loop()
 }
 
 main()

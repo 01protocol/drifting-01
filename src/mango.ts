@@ -4,12 +4,13 @@ import {
     GroupConfig,
     makePlacePerpOrderInstruction,
     MangoAccount,
+    MangoCache,
     MangoClient,
     MangoGroup,
     PerpMarket
 } from '@blockworks-foundation/mango-client';
 import {BN} from '@drift-labs/sdk';
-import {Account, Connection} from "@solana/web3.js";
+import {Account, Connection, PublicKey} from "@solana/web3.js";
 import configFile from './ids.json';
 import {RestClient} from 'ftx-api'
 
@@ -120,6 +121,14 @@ export default class MangoArbClient {
         return {
             SOL, ETH, BTC
         }
+    }
+
+    async getAccountValue() {
+        let cache = await this.mangoGroup.loadCache(this.connection);
+
+        const asset = (this.mangoAccount.getAssetsVal(this.mangoGroup, cache).toNumber())
+        const liability = (this.mangoAccount.getLiabsVal(this.mangoGroup, cache).toNumber())
+        return asset - liability
     }
 
     marketLong(usdAmount, topAsk, quantity) {
