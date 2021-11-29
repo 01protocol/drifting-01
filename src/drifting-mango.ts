@@ -59,7 +59,7 @@ const main = async () => {
     const provider = new Provider(connection, wallet, Provider.defaultOptions());
 
     // Set up Mango
-    const mangoArbClient = new MangoArbClient('https://solana--mainnet.datahub.figment.io/apikey/06492e8f293d446f8e26b4d04f97fa9f')
+    const mangoArbClient = new MangoArbClient('')
     await mangoArbClient.init(JSON.parse(privateKey))
 
 
