@@ -14,6 +14,8 @@ import {
 } from '@drift-labs/sdk';
 import MangoArbClient from "./mango";
 import {wrapInTx} from "@drift-labs/sdk/lib/tx/utils";
+import StatsD from 'hot-shots'
+const dogstatsd = new StatsD();
 
 
 require('dotenv').config();
@@ -140,6 +142,11 @@ const main = async () => {
 
         const driftShortDiff = (priceInfo.shortEntry - mangoAsk) / mangoAsk * 100
         const driftLongDiff = (mangoBid - priceInfo.longEntry) / priceInfo.longEntry * 100
+
+        dogstatsd.gauge('mmm.arb.drift_short', driftShortDiff)
+        dogstatsd.gauge('mmm.arb.drift_long', driftLongDiff)
+
+
         console.log(`Buy Drift Sell Mango Diff: ${driftLongDiff.toFixed(4)}%. // Buy Mango Sell Drift Diff: ${driftShortDiff.toFixed(4)}%.`)
 
         let canOpenDriftLong = await getCanOpenDriftLong()
