@@ -9,6 +9,7 @@ const main = async () => {
 
     const mangoArbClient = new MangoArbClient('')
     await mangoArbClient.init(JSON.parse(''))
+
     const minChange = {
         'SOL': 5,
         'ETH': 0.3,
@@ -107,11 +108,11 @@ const main = async () => {
 
     setInterval(async function(){
         const mangoValue = await mangoArbClient.getAccountValue()
-        const ftxAccount = (await mangoArbClient.ftx.getAccount())['result']['totalAccountValue']
+        const coins = (await mangoArbClient.ftx.getBalances())['result']
+        const ftxValue = coins.map(item => item['usdValue']).reduce((prev, next) => prev + next);
         dogstatsd.gauge('mmm.mango.accountValue', mangoValue)
-        dogstatsd.gauge('mmm.ftx.accountValue', ftxAccount)
-    }, 1000);
-
+        dogstatsd.gauge('mmm.ftx.accountValue', ftxValue)
+    }, 5000);
 
     await loop()
 }
