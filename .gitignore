@@ -142,3 +142,5 @@ src/**.js.map
 .env
 
 key.json
+intest.json
+src/test.ts

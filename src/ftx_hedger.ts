@@ -27,6 +27,25 @@ const main = async () => {
         return orderbook[0][0]
     }
 
+    const reportRpcHealth = (connection) => {
+        let processedSlot = connection.getSlot("processed")
+        let confirmedSlot = connection.getSlot("confirmed")
+        let finalizedSlot = connection.getSlot("finalized")
+        let processedTxnCnt = connection.getTransactionCount("processed")
+        let confirmedTxnCnt = connection.getTransactionCount("confirmed")
+        let finalizedTxnCnt = connection.getTransactionCount("finalized")
+
+        Promise.all([processedSlot, confirmedSlot, finalizedSlot, processedTxnCnt, confirmedTxnCnt, finalizedTxnCnt]).then((values) => {
+            dogstatsd.gauge('mmm.solana.processed_slot', values[0])
+            dogstatsd.gauge('mmm.solana.confirmed_slot', values[1])
+            dogstatsd.gauge('mmm.solana.finalized_slot', values[2])
+            dogstatsd.gauge('mmm.solana.processed_txn_cnt', values[3])
+            dogstatsd.gauge('mmm.solana.confirmed_txn_cnt', values[4])
+            dogstatsd.gauge('mmm.solana.finalized_txn_cnt', values[5])
+        });
+
+    }
+
     async function loop() {
         try {
 
@@ -112,6 +131,7 @@ const main = async () => {
         const ftxValue = coins.map(item => item['usdValue']).reduce((prev, next) => prev + next);
         dogstatsd.gauge('mmm.mango.accountValue', mangoValue)
         dogstatsd.gauge('mmm.ftx.accountValue', ftxValue)
+        reportRpcHealth(mangoArbClient.connection)
     }, 5000);
 
     await loop()
