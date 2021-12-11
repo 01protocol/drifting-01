@@ -1,6 +1,7 @@
 import MangoArbClient from "./mango";
 
 import StatsD from 'hot-shots'
+import {SlotUpdate} from "@solana/web3.js";
 const dogstatsd = new StatsD();
 
 let localOrders = []
@@ -134,7 +135,14 @@ const main = async () => {
         reportRpcHealth(mangoArbClient.connection)
     }, 5000);
 
+    mangoArbClient.connection.onSlotUpdate(((slotUpdate:SlotUpdate) => {
+        if (slotUpdate.type === "optimisticConfirmation") {
+            dogstatsd.increment("mmm.solana.optimistic_confirmation")
+        }
+    }))
+
     await loop()
+
 }
 
 main()
