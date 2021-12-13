@@ -36,7 +36,7 @@ export default class MangoArbClient {
             'mainnet.1',
         ) as GroupConfig;
 
-        this.connection = new Connection(url, {commitment: 'processed'});
+        this.connection = new Connection(url, {commitment: 'confirmed'});
 
         this.ftx = new RestClient(process.env['FTX_API_KEY'], process.env['FTX_API_SECRET'], {
             subAccountName: 'mango-hedge',
