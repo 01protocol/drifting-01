@@ -2,6 +2,8 @@
   "dependencies": {
     "@blockworks-foundation/mango-client": "^3.2.5",
     "@drift-labs/sdk": "^0.1.7",
+    "@project-serum/anchor": "^0.20.1",
+    "@zero_one/client": "../zo-client",
     "ftx-api": "^1.0.19",
     "hot-shots": "^9.0.0",
     "ts-node": "^10.4.0"

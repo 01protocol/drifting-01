@@ -1,4 +1,4 @@
-import { BN, Provider, Wallet } from '@project-serum/anchor';
+import { BN, Provider } from '@project-serum/anchor';
 import { Connection, Keypair, PublicKey } from '@solana/web3.js';
 import {
     calculateMarkPrice,
@@ -13,6 +13,8 @@ import {
     DriftEnv, ClearingHouseUser,
 } from '@drift-labs/sdk';
 import MangoArbClient from "./mango";
+import { ZoArbClient } from './zo';
+import Wallet from "@project-serum/anchor/dist/cjs/nodewallet.js";
 import {wrapInTx} from "@drift-labs/sdk/lib/tx/utils";
 import StatsD from 'hot-shots'
 const dogstatsd = new StatsD();
@@ -25,25 +27,25 @@ require('dotenv').config();
 // at drift long it's comparing to (mango short price - drift long price) / drift long price * 100
 // at rift short it's comparing (drift short price - mango long price) / mango long price * 100
 // TODO: MAKE IT DYNAMIC
-const THRESHOLD = 0.44444;
+const THRESHOLD = parseFloat(process.env.THRESHOLD);
 
 // size for each position, there could be multiple positions until price is within threshold
-const POSITION_SIZE_USD = 100;
+const POSITION_SIZE_USD = parseFloat(process.env.POZITION_SIZE_USD);
 
 // Max position size before going reduce only mode (+/- POSITION_SIZE_USD)
-const MAX_POSITION_SIZE = 3000;
+const MAX_POSITION_SIZE = parseFloat(process.env.MAX_POSITION_SIZE);
 
 // Private key array
 // Please read from file system or environment...
 // Also have it setup & deposit money into it via Phantom.
 // You can import the array into Phantom as private key string.
-const PRIVATE_KEY = '[0,0,0....]'
+const PRIVATE_KEY = process.env.PRIVATE_KEY;
 
 // RPC address, please don't use public ones.
-const RPC_ADDRESS = ''
+const RPC_ADDRESS = process.env.RPC_ADDRESS;
 
 const main = async () => {
-    const sdkConfig = initialize({ env: 'mainnet-beta' as DriftEnv });
+    const sdkConfig = initialize({ env: 'devnet' as DriftEnv });
 
     // Set up the Wallet and Provider
     const privateKey = PRIVATE_KEY
@@ -59,8 +61,8 @@ const main = async () => {
     const provider = new Provider(connection, wallet, Provider.defaultOptions());
 
     // Set up Mango
-    const mangoArbClient = new MangoArbClient('')
-    await mangoArbClient.init(JSON.parse(privateKey))
+    const zoArbClient = new ZoArbClient();
+    await zoArbClient.init();
 
 
     // Set up the Drift Clearing House
@@ -77,7 +79,7 @@ const main = async () => {
     await clearingHouse.subscribe();
 
     const solMarketInfo = Markets.find(
-        (market) => market.baseAssetSymbol === 'SOL'
+        (market) => market.baseAssetSymbol === process.env.MARKET
     );
     const solMarketAccount = clearingHouse.getMarket(solMarketInfo.marketIndex);
 
@@ -85,7 +87,6 @@ const main = async () => {
     // Set up Clearing House user client
     const user = ClearingHouseUser.from(clearingHouse, wallet.publicKey);
     await user.subscribe();
-
 
     let priceInfo = {
         longEntry: 0,
@@ -137,8 +138,8 @@ const main = async () => {
             return
         }
 
-        const mangoBid = await mangoArbClient.getTopAsk()
-        const mangoAsk = await mangoArbClient.getTopBid()
+        const mangoBid = await zoArbClient.getTopAsk()
+        const mangoAsk = await zoArbClient.getTopBid()
 
         const driftShortDiff = (priceInfo.shortEntry - mangoAsk) / mangoAsk * 100
         const driftLongDiff = (mangoBid - priceInfo.longEntry) / priceInfo.longEntry * 100
@@ -174,7 +175,7 @@ const main = async () => {
                 solMarketInfo.marketIndex
             ));
 
-            txn.add(mangoArbClient.marketShort(POSITION_SIZE_USD, mangoBid, quantity))
+            txn.add(await zoArbClient.marketShort(POSITION_SIZE_USD, mangoBid, quantity))
             await clearingHouse.txSender.send(txn, [], clearingHouse.opts).catch(t => {
                 console.log("Transaction didn't go through, may due to low balance...", t)
             });
@@ -201,7 +202,7 @@ const main = async () => {
                 new BN(POSITION_SIZE_USD).mul(QUOTE_PRECISION),
                 solMarketInfo.marketIndex
             ));
-            txn.add(mangoArbClient.marketLong(POSITION_SIZE_USD, mangoAsk, quantity))
+            txn.add(await zoArbClient.marketLong(POSITION_SIZE_USD, mangoAsk, quantity))
             await clearingHouse.txSender.send(txn, [], clearingHouse.opts).catch(t => {
                 console.log("Transaction didn't go through, may due to low balance...", t)
             });
