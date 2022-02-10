@@ -19,8 +19,9 @@ For example if 01 is selling at 260 and Drift is selling at 230, it will open 01
 3. Create new 01 Account in the same wallet via UI
 4. Deposit same amount of money into 01
 5. Create an open orders account for the market you want to arb by placing a position on that market and closing it in the UI
-6. Adjust POSITION_SIZE_USD, MAX_POSITION_SIZE.
-7. Enjoy 
+6. Copy `.env.example` to `.env`
+7. Fill in all parameters for `.env`, don't modify the last line
+8. Enjoy 
 
 Quick Start
 ----
