@@ -1,22 +1,24 @@
-# Drifting Mango
+# Zero One Drifting
 
 *please use caution and burner wallets when using this experimental software*
 
 # What is it
 
-The program looks at Mango SOL-PERP price and Drift SOL-PERP price. 
+Based on a fork of [this repo](https://github.com/chenwainuo/drifting-mango/tree/master/src)
+
+The program looks at 01 SOL-PERP price and Drift SOL-PERP price. 
 
 Once the gap becomes wide enough, it opens a postion on both side to close the gap.
 
-For example if Mango is selling at 260 and Drift is selling at 230, it will open Mango market short and Drift market long (in one transaction!).
+For example if 01 is selling at 260 and Drift is selling at 230, it will open 01 market short and Drift market long (in one transaction!).
 
 # Pre-requisite
 
-1. You will need Drift Alpha access
-2. Import your Drift Alpha access's wallet private key into Phantom. You can paste the whole array in as private key.
-3. Deposit USDC into Drift via UI
-4. Create new Mango Account in the same wallet via UI
-5. Deposit same amount of money into Mango
+1. You will need a Drift account
+2. Deposit USDC into Drift via UI
+3. Create new 01 Account in the same wallet via UI
+4. Deposit same amount of money into 01
+5. Create an open orders account for the market you want to arb by placing a position on that market and closing it in the UI
 6. Adjust POSITION_SIZE_USD, MAX_POSITION_SIZE.
 7. Enjoy 
 
@@ -29,6 +31,9 @@ ts-node src/drifting-mango.ts
 
 # Disclaimer
 
-NFA, everything is written as an experiment, please don't put more than couple bucks into it.
-
+NFA, everything is written as an experiment, please don't put more than couple bucks into it.  
+Do not use software without understanding what it does.  
 It also has no liquidation preventive measure, you will get liquidated.
+
+This repo is meant as a guide for interfacing with 01 code and demonstrates some tools one might need if they wanted to write a bot.
+Use with caution.
