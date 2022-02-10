@@ -12,11 +12,11 @@ import {
     QUOTE_PRECISION,
     DriftEnv, ClearingHouseUser,
 } from '@drift-labs/sdk';
-import MangoArbClient from "./mango";
 import { ZoArbClient } from './zo';
 import Wallet from "@project-serum/anchor/dist/cjs/nodewallet.js";
 import {wrapInTx} from "@drift-labs/sdk/lib/tx/utils";
 import StatsD from 'hot-shots'
+import { programId } from 'ftx-api/lib/util/requestUtils';
 const dogstatsd = new StatsD();
 
 
@@ -24,13 +24,13 @@ require('dotenv').config();
 
 // % differences between markets to initiate a position.
 // higher is likely more profitable but less opportunities
-// at drift long it's comparing to (mango short price - drift long price) / drift long price * 100
-// at rift short it's comparing (drift short price - mango long price) / mango long price * 100
+// at drift long it's comparing to (zo short price - drift long price) / drift long price * 100
+// at rift short it's comparing (drift short price - zo long price) / zo long price * 100
 // TODO: MAKE IT DYNAMIC
 const THRESHOLD = parseFloat(process.env.THRESHOLD);
 
 // size for each position, there could be multiple positions until price is within threshold
-const POSITION_SIZE_USD = parseFloat(process.env.POZITION_SIZE_USD);
+const POSITION_SIZE_USD = parseFloat(process.env.POSITION_SIZE_USD);
 
 // Max position size before going reduce only mode (+/- POSITION_SIZE_USD)
 const MAX_POSITION_SIZE = parseFloat(process.env.MAX_POSITION_SIZE);
@@ -45,7 +45,7 @@ const PRIVATE_KEY = process.env.PRIVATE_KEY;
 const RPC_ADDRESS = process.env.RPC_ADDRESS;
 
 const main = async () => {
-    const sdkConfig = initialize({ env: 'devnet' as DriftEnv });
+    const sdkConfig = initialize({ env: 'mainnet-beta' as DriftEnv });
 
     // Set up the Wallet and Provider
     const privateKey = PRIVATE_KEY
@@ -58,10 +58,14 @@ const main = async () => {
     const connection = new Connection(RPC_ADDRESS);
 
     // Set up the Provider
-    const provider = new Provider(connection, wallet, Provider.defaultOptions());
+    const provider = new Provider(connection, wallet, 
+        {
+            commitment: 'confirmed',
+            skipPreflight: false,
+        });
 
-    // Set up Mango
-    const zoArbClient = new ZoArbClient();
+    // Set up zo
+    const zoArbClient = new ZoArbClient(wallet);
     await zoArbClient.init();
 
 
@@ -138,23 +142,21 @@ const main = async () => {
             return
         }
 
-        const mangoBid = await zoArbClient.getTopAsk()
-        const mangoAsk = await zoArbClient.getTopBid()
+        const zoBid = await zoArbClient.getTopAsk()
+        const zoAsk = await zoArbClient.getTopBid()
 
-        const driftShortDiff = (priceInfo.shortEntry - mangoAsk) / mangoAsk * 100
-        const driftLongDiff = (mangoBid - priceInfo.longEntry) / priceInfo.longEntry * 100
+        const driftShortDiff = (priceInfo.shortEntry - zoAsk) / zoAsk * 100
+        const driftLongDiff = (zoBid - priceInfo.longEntry) / priceInfo.longEntry * 100
 
         dogstatsd.gauge('mmm.arb.drift_short', driftShortDiff)
         dogstatsd.gauge('mmm.arb.drift_long', driftLongDiff)
 
-
-        console.log(`Buy Drift Sell Mango Diff: ${driftLongDiff.toFixed(4)}%. // Buy Mango Sell Drift Diff: ${driftShortDiff.toFixed(4)}%.`)
+        console.log(`Buy Drift Sell 01 Diff: ${driftLongDiff.toFixed(4)}%. // Buy 01 Sell Drift Diff: ${driftShortDiff.toFixed(4)}%.`)
 
         let canOpenDriftLong = await getCanOpenDriftLong()
         let canOpenDriftShort = await getCanOpenDriftShort()
 
-        // open drift long mango short
-
+        // open drift long zo short
         // if short is maxed out, try to lower threshold to close the short open more long.
         let driftLongThreshold = canOpenDriftShort ? THRESHOLD : (0.2 * THRESHOLD)
         if (driftLongDiff > driftLongThreshold) {
@@ -162,26 +164,29 @@ const main = async () => {
                 console.log(`Letting this opportunity go due to Drift long exposure is > ${MAX_POSITION_SIZE}`)
                 return
             }
-            console.log("====================================================================")
-            console.log(`SELL ${POSITION_SIZE_USD} worth of SOL on Mango at price ~${mangoBid}`);
-            console.log(`LONG ${POSITION_SIZE_USD} worth of SOL on Drift at price ~${priceInfo.longEntry}`);
-            console.log(`Capturing ~${driftLongDiff.toFixed(4)}% profit (Mango fees & slippage not included)`);
 
-            const quantity = POSITION_SIZE_USD / priceInfo.longEntry
+            const quantity = Math.trunc(100 * POSITION_SIZE_USD / priceInfo.longEntry) / 100;
+            const usdcQuantity = quantity * priceInfo.longEntry;
+            console.log(`Quantity: ${quantity}, usdc: ${usdcQuantity}`);
+
+            console.log("====================================================================")
+            console.log(`SELL ${usdcQuantity} worth of SOL on 01 at price ~${zoBid}`);
+            console.log(`LONG ${usdcQuantity} worth of SOL on Drift at price ~${priceInfo.longEntry}`);
+            console.log(`Capturing ~${driftLongDiff.toFixed(4)}% profit (01 fees & slippage not included)`);
 
             const txn = wrapInTx(await clearingHouse.getOpenPositionIx(
                 PositionDirection.LONG,
-                new BN(POSITION_SIZE_USD).mul(QUOTE_PRECISION),
+                new BN(usdcQuantity).mul(QUOTE_PRECISION),
                 solMarketInfo.marketIndex
             ));
 
-            txn.add(await zoArbClient.marketShort(POSITION_SIZE_USD, mangoBid, quantity))
+            txn.add(await zoArbClient.marketShort(POSITION_SIZE_USD, zoBid, POSITION_SIZE_USD / priceInfo.longEntry))
             await clearingHouse.txSender.send(txn, [], clearingHouse.opts).catch(t => {
                 console.log("Transaction didn't go through, may due to low balance...", t)
             });
         }
 
-        // open mango short drift long
+        // open zo short drift long
         // if long is maxed out, try to lower threshold to close the long by more short.
         let driftShortThreshold = canOpenDriftLong ? THRESHOLD : (0.2 * THRESHOLD)
         if (driftShortDiff> driftShortThreshold) {
@@ -190,19 +195,22 @@ const main = async () => {
                 return
             }
 
+            // zo rounds down to nearest multiple of 0.1
+            const quantity = Math.trunc(100 * POSITION_SIZE_USD / priceInfo.shortEntry) / 100;
+            const usdcQuantity = quantity * priceInfo.shortEntry;
+            console.log(`Quantity: ${quantity}, usdc: ${usdcQuantity}`);
+
             console.log("====================================================================")
-            console.log(`SELL ${POSITION_SIZE_USD} worth of SOL on Drift at price ~${priceInfo.shortEntry}`);
-            console.log(`LONG ${POSITION_SIZE_USD} worth of SOL on Mango at price ~${mangoAsk}`);
-            console.log(`Capturing ~${driftShortDiff.toFixed(4)}% profit (Mango fees & slippage not included)`);
-
-            const quantity = POSITION_SIZE_USD / priceInfo.shortEntry
-
+            console.log(`SELL ${usdcQuantity} worth of SOL on Drift at price ~${priceInfo.shortEntry}`);
+            console.log(`LONG ${usdcQuantity} worth of SOL on zo at price ~${zoAsk}`);
+            console.log(`Capturing ~${driftShortDiff.toFixed(4)}% profit (zo fees & slippage not included)`);
+            
             const txn = wrapInTx(await clearingHouse.getOpenPositionIx(
                 PositionDirection.SHORT,
-                new BN(POSITION_SIZE_USD).mul(QUOTE_PRECISION),
+                new BN(usdcQuantity).mul(QUOTE_PRECISION),
                 solMarketInfo.marketIndex
             ));
-            txn.add(await zoArbClient.marketLong(POSITION_SIZE_USD, mangoAsk, quantity))
+            txn.add(await zoArbClient.marketLong(POSITION_SIZE_USD, zoAsk, POSITION_SIZE_USD / priceInfo.shortEntry))
             await clearingHouse.txSender.send(txn, [], clearingHouse.opts).catch(t => {
                 console.log("Transaction didn't go through, may due to low balance...", t)
             });

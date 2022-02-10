@@ -11,6 +11,8 @@ import {
 } from "@zero_one/client";
 import * as anchor from "@project-serum/anchor";
 import { Program, Provider } from "@project-serum/anchor";
+import { Connection, TransactionInstruction, Transaction } from "@solana/web3.js";
+import Wallet from "@project-serum/anchor/dist/cjs/nodewallet.js";
 
 export class ZoArbClient {
     private margin: Margin;
@@ -18,14 +20,21 @@ export class ZoArbClient {
     private state: State;
     private program: Program<Zo>;
     private index: number;
+    private wallet: Wallet;
+    constructor(wallet: Wallet) {
+        this.wallet = wallet;
+        const opts: anchor.web3.ConnectionConfig = {
+            commitment: "confirmed",
+        };
 
-    constructor() {
+        const connection = new Connection(process.env.RPC_ADDRESS, opts);
+        const provider = new anchor.Provider(connection, this.wallet, {
+            commitment: "confirmed",
+            skipPreflight: false,
+        });
         this.program = createProgram(
-            anchor.Provider.local(process.env.RPC_ADDRESS, {
-                skipPreflight: false,
-                commitment: "confirmed",
-            }),
-            Cluster.Mainnet
+            provider,
+            Cluster.Mainnet,
         );
     }
 
@@ -56,7 +65,7 @@ export class ZoArbClient {
             }
         }
         try {
-            this.market = await this.state.getMarketBySymbol(process.env.MARKET);
+            this.market = await this.state.getMarketBySymbol(process.env.MARKET + "-PERP");
             this.index = this.state.getMarketIndexBySymbol(process.env.MARKET + "-PERP");
         } catch (e) {
             console.log(e);
@@ -89,11 +98,12 @@ export class ZoArbClient {
     }
 
     async marketLong(_unused, topAsk: number, quantity: number) {
+        console.log(quantity);
         return await this.margin.makePlacePerpOrderIx({
             symbol: process.env.MARKET + '-PERP',
             orderType: { limit: {} },
             isLong: true,
-            price: topAsk,
+            price: topAsk + 1,
             size: quantity,
         });
     }
@@ -103,7 +113,7 @@ export class ZoArbClient {
             symbol: process.env.MARKET + '-PERP',
             orderType: { limit: {} },
             isLong: false,
-            price: topBid,
+            price: topBid - 1,
             size: quantity,
         });
     }
@@ -120,5 +130,15 @@ export class ZoArbClient {
             console.log({ err: "Insufficient lamports" });
             throw new Error("Insufficient lamports");
         }
+    }
+
+    async send(ix) {
+        let tx = new Transaction();
+        tx = tx.add(ix);
+        return await this.program.provider.send(tx);
+    }
+
+    getSigner() {
+        return this.program.provider.wallet;
     }
 }
