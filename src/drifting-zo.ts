@@ -158,7 +158,7 @@ const main = async () => {
 
         // open drift long zo short
         // if short is maxed out, try to lower threshold to close the short open more long.
-        let driftLongThreshold = canOpenDriftShort ? THRESHOLD : (0.2 * THRESHOLD)
+        let driftLongThreshold = canOpenDriftShort ? THRESHOLD : (1.0 * THRESHOLD)
         if (driftLongDiff > driftLongThreshold) {
             if (!canOpenDriftLong) {
                 console.log(`Letting this opportunity go due to Drift long exposure is > ${MAX_POSITION_SIZE}`)
@@ -188,7 +188,7 @@ const main = async () => {
 
         // open zo short drift long
         // if long is maxed out, try to lower threshold to close the long by more short.
-        let driftShortThreshold = canOpenDriftLong ? THRESHOLD : (0.2 * THRESHOLD)
+        let driftShortThreshold = canOpenDriftLong ? THRESHOLD : (1.0 * THRESHOLD)
         if (driftShortDiff> driftShortThreshold) {
             if (!canOpenDriftShort) {
                 console.log(`Letting this opportunity go due to Drift short exposure is < ${MAX_POSITION_SIZE}`)
