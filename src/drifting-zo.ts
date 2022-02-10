@@ -161,7 +161,7 @@ const main = async () => {
         let driftLongThreshold = canOpenDriftShort ? THRESHOLD : (1.0 * THRESHOLD)
         if (driftLongDiff > driftLongThreshold) {
             if (!canOpenDriftLong) {
-                console.log(`Letting this opportunity go due to Drift long exposure is > ${MAX_POSITION_SIZE}`)
+                console.log(`Letting this opportunity go due to Drift long exposure is > $${MAX_POSITION_SIZE}`)
                 return
             }
 
@@ -170,8 +170,8 @@ const main = async () => {
             console.log(`Quantity: ${quantity}, usdc: ${usdcQuantity}`);
 
             console.log("====================================================================")
-            console.log(`SELL ${usdcQuantity} worth of SOL on 01 at price ~${zoBid}`);
-            console.log(`LONG ${usdcQuantity} worth of SOL on Drift at price ~${priceInfo.longEntry}`);
+            console.log(`SELL ${usdcQuantity} worth of SOL on 01 at price ~$${zoBid}`);
+            console.log(`LONG ${usdcQuantity} worth of SOL on Drift at price ~$${priceInfo.longEntry}`);
             console.log(`Capturing ~${driftLongDiff.toFixed(4)}% profit (01 fees & slippage not included)`);
 
             const txn = wrapInTx(await clearingHouse.getOpenPositionIx(
@@ -191,7 +191,7 @@ const main = async () => {
         let driftShortThreshold = canOpenDriftLong ? THRESHOLD : (1.0 * THRESHOLD)
         if (driftShortDiff> driftShortThreshold) {
             if (!canOpenDriftShort) {
-                console.log(`Letting this opportunity go due to Drift short exposure is < ${MAX_POSITION_SIZE}`)
+                console.log(`Letting this opportunity go due to Drift short exposure is > $${MAX_POSITION_SIZE}`)
                 return
             }
 
@@ -201,8 +201,8 @@ const main = async () => {
             console.log(`Quantity: ${quantity}, usdc: ${usdcQuantity}`);
 
             console.log("====================================================================")
-            console.log(`SELL ${usdcQuantity} worth of SOL on Drift at price ~${priceInfo.shortEntry}`);
-            console.log(`LONG ${usdcQuantity} worth of SOL on zo at price ~${zoAsk}`);
+            console.log(`SELL ${usdcQuantity} worth of SOL on Drift at price ~$${priceInfo.shortEntry}`);
+            console.log(`LONG ${usdcQuantity} worth of SOL on zo at price ~$${zoAsk}`);
             console.log(`Capturing ~${driftShortDiff.toFixed(4)}% profit (zo fees & slippage not included)`);
             
             const txn = wrapInTx(await clearingHouse.getOpenPositionIx(
