@@ -98,7 +98,6 @@ export class ZoArbClient {
     }
 
     async marketLong(_unused, topAsk: number, quantity: number) {
-        console.log(quantity);
         return await this.margin.makePlacePerpOrderIx({
             symbol: process.env.MARKET + '-PERP',
             orderType: { limit: {} },

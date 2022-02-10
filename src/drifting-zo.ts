@@ -195,7 +195,7 @@ const main = async () => {
                 return
             }
 
-            // zo rounds down to nearest multiple of 0.1
+            // zo rounds down to nearest multiple of 0.01
             const quantity = Math.trunc(100 * POSITION_SIZE_USD / priceInfo.shortEntry) / 100;
             const usdcQuantity = quantity * priceInfo.shortEntry;
             console.log(`Quantity: ${quantity}, usdc: ${usdcQuantity}`);
